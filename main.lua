@@ -4,22 +4,31 @@ local canv_1y = 0
 local canv_height = 800
 local canv_width  = 600
 
-rnd = love.math.random
+local rnd = love.math.random
 
 
 local p={}
 p.p = {x=0,y=0}
 
-function gen_bg1()
+local function gen_bg1()
   local canv =love.graphics.newCanvas(canv_width,canv_height-20)
   love.graphics.setCanvas(canv)
-    for i=0, 500 do
+  
+  love.graphics.setPointSize(3)
+    for i= 0, 50 do
+      local x,y =rnd(0, canv_width-10),rnd(0,canv_height-10)
+      love.graphics.points(x,y)
+    end
+  love.graphics.setPointSize(1)
+    for i=0, 50 do
       local x,y = rnd(20,canv_width-30),rnd(20,canv_height - 30)
       local c = rnd(0,255)/255
       local r = rnd(5,20)
       love.graphics.setColor(c,c,c,1)
       love.graphics.circle("fill",x,y,r)
     end
+    
+    
     
   love.graphics.setCanvas()
   return canv
@@ -66,7 +75,7 @@ local bull = {}
 local mobs = {}
 
 
-function spawn_bull()
+local function spawn_bull()
   bull[#bull+1] = {}
   
   bull[#bull].x = p.p.x -5
@@ -83,7 +92,7 @@ function spawn_bull()
   
 end
 
-function spawn_mob(x_,y_)
+local function spawn_mob(x_,y_)
   mobs[#mobs+1] = {}
   
   mobs[#mobs].w = 32
@@ -94,7 +103,7 @@ function spawn_mob(x_,y_)
   
 end
 
-function update_mob()
+local function update_mob()
   for i=#mobs,1,-1 do
       local k = mobs[i]
       k.y = k.y + 3
@@ -114,7 +123,7 @@ function update_mob()
 end
 
 
-function draw_mob()
+local function draw_mob()
    for i,j in ipairs(mobs) do
      love.graphics.rectangle("fill",j.x,j.y,32,32)
    end
@@ -122,13 +131,13 @@ function draw_mob()
 end
 
 
-function draw_bull()
+local function draw_bull()
   for i,j in ipairs(bull) do
     love.graphics.rectangle("fill",j.x,j.y,10,20)
   end
 end
 
-function update_bull()
+local function update_bull()
   for i= #bull,1,-1 do
     local j=bull[i]
     j.x,j.y =h.lerp_point(j.sx,j.sy,j.sx,-20,j.time +j.speed)
@@ -152,7 +161,7 @@ end
 
 
 
-function update_pos(pos,num)
+local function update_pos(pos,num)
     if pos > num*#array-2 then
       pos = 0-32
     else
@@ -162,12 +171,12 @@ function update_pos(pos,num)
 end
 
 
-function update_stats(dt)
+local function update_stats(dt)
   stats.time_alive = stats.time_alive +  math.floor(dt*1000)/1000
   stats.score       = stats.killed_mobs *10
 end
 
-function print_stats()
+local function print_stats()
   local txt = {}
   for i,j in pairs(stats) do
       txt[#txt+1] = i.." :"..j
@@ -178,7 +187,7 @@ function print_stats()
 end
 
 
-function bg_draw()
+local function bg_draw()
   for i,j in ipairs(array) do
     love.graphics.setColor((255 - i*10)/255,(255-i*10)/255,(255-i*10)/255,255)
     for k=0,15 do
@@ -193,21 +202,21 @@ function bg_draw()
 end
 
 
-function bg_update()
+local function bg_update()
   for i,j in ipairs(array) do
     array[i] = update_pos(j,32)
   end
 end
 
-function bg_draw2()
-  love.graphics.rectangle("line",0,canv_1y,600,800)
+local function bg_draw2()
+  --love.graphics.rectangle("line",0,canv_1y,600,800)
   love.graphics.draw(canv_1,0,canv_1y)
   
-  love.graphics.rectangle("line",0,0 - canv_height +canv_1y,canv_width,canv_height)
+  --love.graphics.rectangle("line",0,0 - canv_height +canv_1y,canv_width,canv_height)
   love.graphics.draw(canv_1,0,0 - canv_height +canv_1y)
 end
 
-function bg_update2()
+local function bg_update2()
   if canv_1y < canv_height then
     canv_1y = canv_1y +1
   else
