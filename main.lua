@@ -28,6 +28,18 @@ end
 
 
 
+
+
+local stats =
+{
+  time_alive  = 0,
+  killed_mobs = 0,
+  coins       = 0,
+  special     = 0,
+  score       = 0
+  }
+
+
 local h = 0
 local col_count = 0
 
@@ -130,6 +142,7 @@ function update_bull()
         if h.CheckCollision(j,{p1={x =mob.x,y= mob.y+mob.h},p2={x=mob.x+mob.w,y=mob.y+mob.h}}) == true then
           table.remove(mobs,k)
           table.remove(bull,i)
+          stats.killed_mobs = stats.killed_mobs+1
         end
     end
     
@@ -146,6 +159,22 @@ function update_pos(pos,num)
       pos = pos + 3
     end
     return pos
+end
+
+
+function update_stats(dt)
+  stats.time_alive = stats.time_alive +  math.floor(dt*1000)/1000
+  stats.score       = stats.killed_mobs *10
+end
+
+function print_stats()
+  local txt = {}
+  for i,j in pairs(stats) do
+      txt[#txt+1] = i.." :"..j
+  end
+  
+  love.graphics.print(table.concat(txt,"\n"),canv_width+10,20)
+    
 end
 
 
@@ -204,6 +233,8 @@ function love.draw()
   
   
   love.graphics.print(col_count,0,0)
+  
+  print_stats()
 end
 
 timer = 0
@@ -227,6 +258,9 @@ function love.update(dt)
   update_mob()
   
   update_bull()
+  
+  
+  update_stats(dt)
 end
 
 
