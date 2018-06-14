@@ -20,8 +20,8 @@ end
 
 
 function console.draw()
-  love.graphics.rectangle("line",590,145,200,400)
-  love.graphics.print(table.concat(buffer,"\n"),600,150)
+  love.graphics.rectangle("line",605,145,200,450)
+  love.graphics.print(table.concat(buffer,"\n"),610,150)
 end
 
 

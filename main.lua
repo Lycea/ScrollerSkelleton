@@ -135,7 +135,7 @@ local function update_mob()
        col_count = col_count +1
      end
      
-     if k.y> 400 then
+     if k.y> 800 then
        table.remove(mobs,i)
      end
   end
@@ -290,7 +290,7 @@ function love.update(dt)
   timer = timer +dt
   timer_mobs = timer_mobs +dt
   
-  if timer_mobs > 0.05 then
+  if timer_mobs > 0.01 then
     cons.print("spawn: "..timer_mobs)
       timer_mobs = 0
       --local r = rnd(0,1000) 
@@ -301,7 +301,7 @@ function love.update(dt)
   end
   
   
-  if love.mouse.isDown(1)  and timer > 0.1 then
+  if love.mouse.isDown(1)  then--and timer > 0.1 then
     spawn_bull()
     timer = 0
   end
