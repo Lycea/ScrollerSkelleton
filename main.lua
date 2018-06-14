@@ -45,31 +45,40 @@ local stats =
   killed_mobs = 0,
   coins       = 0,
   special     = 0,
+  mobs_on_screen = 0,
+  bullets_on_screen = 0,
   score       = 0
   }
 
 
 local h = 0
 local col_count = 0
-
+local cons = 0
 function love.load()
-  require("mobdebug").start()
+  
+  print("test")
+  
+  --debug slows performance a lot only run if needed...
+  --TODO: maybe adjust checking only if objects are "near" ... 10/20 pix away
+  --this could increase the performance
+  
+  --require("mobdebug").start()
   
   h =require("helper")
-  for i=1,15 do
-    array[i] = (i-1)*32
-  end
+  cons =require("console")
+  
+ -- for i=1,15 do
+ --   array[i] = (i-1)*32
+ -- end
   canv_1 = gen_bg1()
-  canv_2 = gen_bg1()
   
   love.graphics.setColor(1,1,1,1)
   love.mouse.setVisible(false)
+  
+  
+
 end
 
-array = 
-{
-
-  }
 
 local bull = {}
 local mobs = {}
@@ -103,13 +112,24 @@ local function spawn_mob(x_,y_)
   
 end
 
+local function spawn_mob_row()
+  for i = 0, 7 do
+     --cons.print(i*32+20)
+    spawn_mob(i* 40 ,0)
+  end
+end
+
+
+
 local function update_mob()
   for i=#mobs,1,-1 do
       local k = mobs[i]
-      k.y = k.y + 3
+      k.y = k.y + 0.75
       
       --check player coll and end
-     local boo = h.CheckCollision(k,{p1={x=p.p.x-16,y = p.p.y-16 },p2={x=p.p.x+16,y = p.p.y-16 }})
+      if h.dist(p.p.x,p.p.y,k.x,k.y) < 15 then
+        local boo = h.CheckCollision(k,{p1={x=p.p.x-16,y = p.p.y-16 },p2={x=p.p.x+16,y = p.p.y-16 }})
+     end
      
      if boo == true then
        col_count = col_count +1
@@ -148,10 +168,13 @@ local function update_bull()
     
     for k = #mobs,1,-1 do
         local mob = mobs[k]
-        if h.CheckCollision(j,{p1={x =mob.x,y= mob.y+mob.h},p2={x=mob.x+mob.w,y=mob.y+mob.h}}) == true then
-          table.remove(mobs,k)
-          table.remove(bull,i)
-          stats.killed_mobs = stats.killed_mobs+1
+        
+        if h.dist(mob.x,mob.y,j.x,j.y) < 50 then
+          if h.CheckCollision(j,{p1={x =mob.x,y= mob.y+mob.h},p2={x=mob.x+mob.w,y=mob.y+mob.h}}) == true then
+            table.remove(mobs,k)
+            table.remove(bull,i)
+            stats.killed_mobs = stats.killed_mobs+1
+          end
         end
     end
     
@@ -172,13 +195,19 @@ end
 
 
 local function update_stats(dt)
+  stats.mobs_on_screen = #mobs
+  stats.bullets_on_screen =#bull
+  
   stats.time_alive = stats.time_alive +  math.floor(dt*1000)/1000
-  stats.score       = stats.killed_mobs *10
+  stats.score       = stats.killed_mobs *10  +math.floor(stats.time_alive*100)
 end
 
 local function print_stats()
   local txt = {}
   for i,j in pairs(stats) do
+      if i == "time_alive" then
+        j = math.floor(j)
+      end
       txt[#txt+1] = i.." :"..j
   end
   
@@ -242,20 +271,37 @@ function love.draw()
   
   
   love.graphics.print(col_count,0,0)
+  love.graphics.line(canv_width,0,canv_width,canv_height)
   
   print_stats()
+  love.graphics.print(love.timer.getFPS(),canv_width + 10,120)
+  
+  cons.draw()
 end
 
-timer = 0
+local timer = 0
+local timer_mobs = 0
+
 function love.update(dt)
   local mx,my= love.mouse.getPosition()
-  p.p.x = h.lerp_(mx,p.p.x,0.05)
+  p.p.x = math.min(h.lerp_(mx,p.p.x,0.05),canv_width-20)
   p.p.y = h.lerp_(my,p.p.y,0.05)
   --bg_update()
   timer = timer +dt
+  timer_mobs = timer_mobs +dt
+  
+  if timer_mobs > 0.05 then
+    cons.print("spawn: "..timer_mobs)
+      timer_mobs = 0
+      --local r = rnd(0,1000) 
+      --if r > 750 then
+        spawn_mob_row()
+      --end
+      
+  end
   
   
-  if love.mouse.isDown(1) and timer > 0.2 then
+  if love.mouse.isDown(1)  and timer > 0.1 then
     spawn_bull()
     timer = 0
   end
@@ -277,3 +323,55 @@ function love.mousepressed(x,y)
   spawn_mob(rnd(10,canv_width-32),0)
 end
 
+
+function love.run()
+ 
+	if love.math then
+		love.math.setRandomSeed(os.time())
+	end
+ 
+	if love.load then love.load(arg) end
+ 
+	-- We don't want the first frame's dt to include time taken by love.load.
+	if love.timer then love.timer.step() end
+ 
+	local dt = 0
+ 
+	-- Main loop time.
+	while true do
+		local start_time = love.timer.getTime()
+		-- Process events.
+		if love.event then
+			love.event.pump()
+			for name, a,b,c,d,e,f in love.event.poll() do
+				if name == "quit" then
+					if not love.quit or not love.quit() then
+						return a
+					end
+				end
+				love.handlers[name](a,b,c,d,e,f)
+			end
+		end
+ 
+		-- Update dt, as we'll be passing it to update
+		if love.timer then
+			love.timer.step()
+			dt = love.timer.getDelta()
+		end
+		
+		-- Call update and draw
+		if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
+ 
+		if love.graphics and love.graphics.isActive() then
+			love.graphics.clear(love.graphics.getBackgroundColor())
+			love.graphics.origin()
+			if love.draw then love.draw() end
+			love.graphics.present()
+		end
+		local end_time = love.timer.getTime()
+		local frame_time = end_time - start_time
+		
+		if love.timer then love.timer.sleep(1/60-frame_time) end
+	end
+ 
+end
