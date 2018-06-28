@@ -329,14 +329,23 @@ end
 
 local cb={
     game = function (id) 
-        
-        end,
+       
+    end,
     options = function (id) 
         
         
         end,
     menue  = function (id) 
-        
+         if id == gui["menue"][1] then
+            state="game"
+            ui.SetGroupVisible("menue",false)
+            ui.SetGroupVisible("game",true)
+        elseif id == gui["menue"][2] then
+        elseif id == gui["menue"][3] then
+        elseif id == gui["menue"][4] then
+        elseif id == gui["menue"][5] then
+            love.event.quit()
+        end
         
         end,
     pause  = function (id) 
@@ -350,6 +359,7 @@ local cb={
             state ="menue"
             ui.SetGroupVisible("pause",false)
             ui.SetGroupVisible("menue",true)
+            --reset the game/stats
         end
     end
     }
@@ -480,7 +490,7 @@ elseif key == "2" then
         state = states[3]
         ui.SetGroupVisible(state,true)
         love.mouse.setVisible(true)
-    elseif key == "escape"then
+    elseif key == "escape" and state == "game" then
         --pause the game
         ui.SetGroupVisible(state,false)
         state ="pause"
