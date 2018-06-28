@@ -1,3 +1,6 @@
+local ui = require("SimpleUI.SimpleUI")
+
+
 local canv_1 = 0
 local canv_1y = 0
 
@@ -9,6 +12,17 @@ local rnd = love.math.random
 
 local p={}
 p.p = {x=0,y=0}
+
+
+
+local draw   ={}
+
+local update ={}
+local last_state = "menue"
+
+
+
+
 
 local function gen_bg1()
   local canv =love.graphics.newCanvas(canv_width,canv_height-20)
@@ -22,9 +36,9 @@ local function gen_bg1()
   love.graphics.setPointSize(1)
     for i=0, 50 do
       local x,y = rnd(20,canv_width-30),rnd(20,canv_height - 30)
-      local c = rnd(0,255)/255
+      local c = rnd(0,255)
       local r = rnd(5,20)
-      love.graphics.setColor(c,c,c,1)
+      love.graphics.setColor(c,c,c,255)
       love.graphics.circle("fill",x,y,r)
     end
     
@@ -54,36 +68,24 @@ local stats =
 local h = 0
 local col_count = 0
 local cons = 0
-function love.load()
-  
-  print("test")
-  
-  --debug slows performance a lot only run if needed...
-  --TODO: maybe adjust checking only if objects are "near" ... 10/20 pix away
-  --this could increase the performance
-  
-  --require("mobdebug").start()
-  
-  h =require("helper")
-  cons =require("console")
-  
- -- for i=1,15 do
- --   array[i] = (i-1)*32
- -- end
-  canv_1 = gen_bg1()
-  
-  love.graphics.setColor(1,1,1,1)
-  love.mouse.setVisible(false)
-  
-  
 
-end
+local img = 0
+local mob_quad={}
+
 
 
 local bull = {}
 local mobs = {}
 
+local states= {"game","menue","options","pause"}
+local state = "game"
 
+local timer = 0
+local timer_mobs = 0
+
+-------------------------
+-- Game functions...   -- 
+-------------------------
 local function spawn_bull()
   bull[#bull+1] = {}
   
@@ -104,8 +106,8 @@ end
 local function spawn_mob(x_,y_)
   mobs[#mobs+1] = {}
   
-  mobs[#mobs].w = 32
-  mobs[#mobs].h = 32
+  mobs[#mobs].w = 64
+  mobs[#mobs].h = 64
   
   mobs[#mobs].x = x_
   mobs[#mobs].y = y_
@@ -115,7 +117,7 @@ end
 local function spawn_mob_row()
   for i = 0, 7 do
      --cons.print(i*32+20)
-    spawn_mob(i* 40 ,0)
+    spawn_mob(i* 75 ,0)
   end
 end
 
@@ -144,8 +146,11 @@ end
 
 
 local function draw_mob()
+    love.graphics.setColor(255,255,255,255)
    for i,j in ipairs(mobs) do
-     love.graphics.rectangle("fill",j.x,j.y,32,32)
+       
+     --love.graphics.rectangle("fill",j.x,j.y,32,32)
+     love.graphics.draw(img,mob_quad[1],j.x,j.y,0,1,1)
    end
    
 end
@@ -169,7 +174,7 @@ local function update_bull()
     for k = #mobs,1,-1 do
         local mob = mobs[k]
         
-        if h.dist(mob.x,mob.y,j.x,j.y) < 50 then
+        if h.dist(mob.x,mob.y,j.x,j.y) < 70 then
           if h.CheckCollision(j,{p1={x =mob.x,y= mob.y+mob.h},p2={x=mob.x+mob.w,y=mob.y+mob.h}}) == true then
             table.remove(mobs,k)
             table.remove(bull,i)
@@ -216,26 +221,7 @@ local function print_stats()
 end
 
 
-local function bg_draw()
-  for i,j in ipairs(array) do
-    love.graphics.setColor((255 - i*10)/255,(255-i*10)/255,(255-i*10)/255,255)
-    for k=0,15 do
-      love.graphics.setColor((255 - i*10)/255,(255-i*10)/255,(255-i*10)/255,255)
-    love.graphics.rectangle("fill",0+k*32,j+k*32,32,32)
-    
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.rectangle("line",0+k*32,j+k*32,32,32)
-    end
-  
-  end
-end
 
-
-local function bg_update()
-  for i,j in ipairs(array) do
-    array[i] = update_pos(j,32)
-  end
-end
 
 local function bg_draw2()
   --love.graphics.rectangle("line",0,canv_1y,600,800)
@@ -253,15 +239,15 @@ local function bg_update2()
   end
 end
 
-
-
-
-function love.draw()
-  --bg_draw()
-  love.graphics.setColor(1,1,1,1)
+-------------------------------------------
+--main drawing and update functions start--
+-------------------------------------------
+function draw.game()
+    --bg_draw()
+  love.graphics.setColor(255,255,255,255)
   bg_draw2()
   
-  love.graphics.setColor(125/255,1,1,1)
+  love.graphics.setColor(125,255,255,255)
   love.graphics.circle("fill",p.p.x,p.p.y,5)
   
   
@@ -279,29 +265,38 @@ function love.draw()
   cons.draw()
 end
 
-local timer = 0
-local timer_mobs = 0
+function draw.menue()
+    
+end
 
-function love.update(dt)
-  local mx,my= love.mouse.getPosition()
+function draw.options()
+    
+end
+
+function draw.pause()
+    draw.game()
+    
+    love.graphics.setColor(0,0,0,100)
+    love.graphics.rectangle("fill",0,0,canv_width,canv_height)
+end
+
+
+function update.game(dt)
+    local mx,my= love.mouse.getPosition()
   p.p.x = math.min(h.lerp_(mx,p.p.x,0.05),canv_width-20)
   p.p.y = h.lerp_(my,p.p.y,0.05)
   --bg_update()
   timer = timer +dt
   timer_mobs = timer_mobs +dt
   
-  if timer_mobs > 0.01 then
-    cons.print("spawn: "..timer_mobs)
-      timer_mobs = 0
-      --local r = rnd(0,1000) 
-      --if r > 750 then
-        spawn_mob_row()
-      --end
-      
+  if timer_mobs > 1.5 then
+    timer_mobs = 0
+
+    spawn_mob_row()
   end
   
   
-  if love.mouse.isDown(1)  then--and timer > 0.1 then
+  if love.mouse.isDown(1) and timer > 0.1 then
     spawn_bull()
     timer = 0
   end
@@ -315,13 +310,202 @@ function love.update(dt)
   update_bull()
   
   
-  update_stats(dt)
+  update_stats(dt) 
+end
+
+function update.menue(dt)
+    
+end
+
+function update.options(dt)
+    
+end
+
+function update.pause(dt)
+    
+end
+
+
+
+local cb={
+    game = function (id) 
+        
+        end,
+    options = function (id) 
+        
+        
+        end,
+    menue  = function (id) 
+        
+        
+        end,
+    pause  = function (id) 
+        if id == gui["pause"][1] then
+            state="game"
+            ui.SetGroupVisible("pause",false)
+            ui.SetGroupVisible("game",true)
+        elseif id == gui["pause"][2] then
+        elseif id == gui["pause"][3] then
+        elseif id == gui["pause"][4] then
+            state ="menue"
+            ui.SetGroupVisible("pause",false)
+            ui.SetGroupVisible("menue",true)
+        end
+    end
+    }
+
+
+
+
+
+local function button_cb(id,name)
+    cons.print("clicked:"..id)
+    for idx,obj in pairs(gui) do
+        for idx2,id_ in ipairs(obj) do
+           if id == id_ then
+               print(idx)
+               cb[idx](id)
+           end
+           
+        end
+    end
+    
+end
+
+-----------------------------
+--base framework callbacks --
+-----------------------------
+local scr_w,scr_h
+function love.load()
+  
+  require("mobdebug").start()
+  
+  h =require("helper")
+  cons =require("console")
+  
+  scr_w,scr_h = love.graphics.getWidth(),love.graphics.getHeight()
+  
+  canv_1 = gen_bg1()
+  
+  love.graphics.setColor(255,255,255,255)
+  love.mouse.setVisible(false)
+  
+  
+  --load the images
+  img = love.graphics.newImage("mobsi_1.png")
+  
+  local img_h = img:getHeight()
+  local img_w = img:getWidth()
+  
+  mob_quad[1] =love.graphics.newQuad(0,0,64,64,img_w,img_h)
+  mob_quad[2] =love.graphics.newQuad(64,0,64,64,img_w,img_h)
+  mob_quad[3] =love.graphics.newQuad(128,0,64,64,img_w,img_h)
+  
+  
+  --setup the ui
+  ui.init()
+  ui.AddClickHandle(button_cb)
+  
+  gui=
+  {
+      menue={
+          
+      ui.AddButton(" start run ",scr_w/2 - 30,40,0,0),
+      ui.AddButton(" options ",scr_w/2 - 30,90,0,0),
+      ui.AddButton(" shop ",scr_w/2 - 30,140,0,0),
+      ui.AddButton(" score ",scr_w/2 - 30,190,0,0),
+      ui.AddButton(" exit ",scr_w/2 - 30,240,0,0)
+     },
+     
+     options={
+         ui.AddButton(" confirm ",scr_w/2 - 30,40,0,0),
+         ui.AddButton(" cancel ",scr_w/2 - 30,40,0,0),
+     },
+     
+     pause={
+         ui.AddButton(" continue ",scr_w/2 - 30,40,0,0),
+         ui.AddButton(" restart ",scr_w/2 - 30,90,0,0),
+         ui.AddButton(" options ",scr_w/2 - 30,140,0,0),
+         ui.AddButton(" back to menue ",scr_w/2 - 30,190,0,0),
+     },
+     game={}
+  }
+  
+  for idx,obj in pairs(gui)do
+    ui.AddGroup(obj,idx)
+  end
+
+ ui.SetGroupVisible("menue",false)  
+ ui.SetGroupVisible("options",false)  
+ ui.SetGroupVisible("pause",false)  
+end
+
+
+function love.draw()
+  draw[state]()
+  ui.draw()
+end
+
+
+
+
+function love.update(dt)
+ update[state](dt)
+ 
+ ui.update()
 end
 
 
 function love.mousepressed(x,y)
-  spawn_mob(rnd(10,canv_width-32),0)
+ -- spawn_mob(rnd(10,canv_width-32),0)
 end
+
+function love.keypressed(key,code,repe)
+    --start game
+    if key == "1"then
+        ui.SetGroupVisible(state,false)
+        print(state)
+        state = states[1]
+        ui.SetGroupVisible(state,true)
+        love.mouse.setVisible(false)
+    --menue
+elseif key == "2" then
+        ui.SetGroupVisible(state,false)
+        state = states[2]
+        ui.SetGroupVisible(state,true)
+         love.mouse.setVisible(true)
+     --options
+ elseif key == "3" then
+        ui.SetGroupVisible(state,false)
+        state = states[3]
+        ui.SetGroupVisible(state,true)
+        love.mouse.setVisible(true)
+    elseif key == "escape"then
+        --pause the game
+        ui.SetGroupVisible(state,false)
+        state ="pause"
+        ui.SetGroupVisible(state,true)
+        --unhide the mouse
+        love.mouse.setVisible(true)
+    end
+    
+    
+end
+
+function love.focus(f)
+    if state == "game" then
+        if f == false then
+            ui.SetGroupVisible(state,false)
+            state ="pause"
+            ui.SetGroupVisible(state,true)
+        else
+            ui.SetGroupVisible(state,false)
+            state ="game"
+            ui.SetGroupVisible(state,true)
+        end
+    end
+end
+
 
 
 function love.run()
