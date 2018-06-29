@@ -1,4 +1,4 @@
-local ui = require("SimpleUI.SimpleUI")
+local ui 
 
 
 local canv_1 = 0
@@ -8,6 +8,7 @@ local canv_height = 800
 local canv_width  = 600
 
 local rnd = love.math.random
+local gr  = love.graphics
 
 
 local p={}
@@ -127,11 +128,12 @@ local function update_mob()
   for i=#mobs,1,-1 do
       local k = mobs[i]
       k.y = k.y + 0.75
-      
+      local boo 
       --check player coll and end
+      --cons.print(h.dist(p.p.x,p.p.y,k.x,k.y))
       if h.dist(p.p.x,p.p.y,k.x,k.y) < 15 then
-        local boo = h.CheckCollision(k,{p1={x=p.p.x-16,y = p.p.y-16 },p2={x=p.p.x+16,y = p.p.y-16 }})
-     end
+         boo = h.CheckCollision(k,{p1={x=p.p.x-16,y = p.p.y-16 },p2={x=p.p.x+16,y = p.p.y-16 }})
+      end
      
      if boo == true then
        col_count = col_count +1
@@ -151,6 +153,7 @@ local function draw_mob()
        
      --love.graphics.rectangle("fill",j.x,j.y,32,32)
      love.graphics.draw(img,mob_quad[1],j.x,j.y,0,1,1)
+    
    end
    
 end
@@ -263,6 +266,9 @@ function draw.game()
   love.graphics.print(love.timer.getFPS(),canv_width + 10,120)
   
   cons.draw()
+  
+  
+  love.graphics.draw(psystem, p.p.x,p.p.y )
 end
 
 function draw.menue()
@@ -282,7 +288,7 @@ end
 
 
 function update.game(dt)
-    local mx,my= love.mouse.getPosition()
+  local mx,my= love.mouse.getPosition()
   p.p.x = math.min(h.lerp_(mx,p.p.x,0.05),canv_width-20)
   p.p.y = h.lerp_(my,p.p.y,0.05)
   --bg_update()
@@ -340,7 +346,9 @@ local cb={
             state="game"
             ui.SetGroupVisible("menue",false)
             ui.SetGroupVisible("game",true)
+            love.mouse.setVisible(false)
         elseif id == gui["menue"][2] then
+          
         elseif id == gui["menue"][3] then
         elseif id == gui["menue"][4] then
         elseif id == gui["menue"][5] then
@@ -354,6 +362,9 @@ local cb={
             ui.SetGroupVisible("pause",false)
             ui.SetGroupVisible("game",true)
         elseif id == gui["pause"][2] then
+            state="options"
+            ui.SetGroupVisible("pause",false)
+            ui.SetGroupVisible("options",true)
         elseif id == gui["pause"][3] then
         elseif id == gui["pause"][4] then
             state ="menue"
@@ -382,23 +393,42 @@ local function button_cb(id,name)
     
 end
 
+------------------
+--particle functions
+------------------
+local function load_parts()
+  local img = gr.newImage("snow.png")
+  
+  psystem = love.graphics.newParticleSystem(img, 32)
+	psystem:setParticleLifetime(2, 5) -- Particles live at least 2s and at most 5s.
+  psystem:setEmissionRate(5)
+	psystem:setSizeVariation(1)
+	psystem:setLinearAcceleration(-10, 20, 10, 20) -- Random movement in all directions.
+	psystem:setColors(255, 255, 255, 255, 255, 255, 255, 0) -- Fade to transparency.
+	psystem:setSizes(0.5)
+end
+
+
+
 -----------------------------
 --base framework callbacks --
 -----------------------------
 local scr_w,scr_h
 function love.load()
   
-  require("mobdebug").start()
+ -- require("mobdebug").start()
   
-  h =require("helper")
-  cons =require("console")
-  
+  h    = require("helper")
+  cons = require("console")
+  ui   = require("SimpleUI.SimpleUI")
   scr_w,scr_h = love.graphics.getWidth(),love.graphics.getHeight()
   
   canv_1 = gen_bg1()
   
+  
   love.graphics.setColor(255,255,255,255)
   love.mouse.setVisible(false)
+  
   
   
   --load the images
@@ -429,7 +459,7 @@ function love.load()
      
      options={
          ui.AddButton(" confirm ",scr_w/2 - 30,40,0,0),
-         ui.AddButton(" cancel ",scr_w/2 - 30,40,0,0),
+         ui.AddButton(" cancel ",scr_w/2 +50,40,0,0),
      },
      
      pause={
@@ -448,6 +478,9 @@ function love.load()
  ui.SetGroupVisible("menue",false)  
  ui.SetGroupVisible("options",false)  
  ui.SetGroupVisible("pause",false)  
+ 
+ 
+ load_parts()
 end
 
 
@@ -463,6 +496,7 @@ function love.update(dt)
  update[state](dt)
  
  ui.update()
+ psystem:update(dt)
 end
 
 
@@ -508,10 +542,12 @@ function love.focus(f)
             ui.SetGroupVisible(state,false)
             state ="pause"
             ui.SetGroupVisible(state,true)
+            love.mouse.setVisible(true)
         else
             ui.SetGroupVisible(state,false)
             state ="game"
             ui.SetGroupVisible(state,true)
+            love.mouse.setVisible(false)
         end
     end
 end
