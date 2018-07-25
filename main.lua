@@ -104,7 +104,7 @@ local function spawn_bull()
   
 end
 
-local function spawn_mob(x_,y_)
+local function spawn_mob(x_,y_,sy,sx)
   mobs[#mobs+1] = {}
   
   mobs[#mobs].w = 64
@@ -112,27 +112,41 @@ local function spawn_mob(x_,y_)
   
   mobs[#mobs].x = x_
   mobs[#mobs].y = y_
+  mobs[#mobs].sy = sy or 0.75
+  mobs[#mobs].sx = sx or 0
   
 end
 
 local function spawn_mob_row()
   for i = 0, 7 do
-     --cons.print(i*32+20)
+     cons.print(i*32+20)
     spawn_mob(i* 75 ,0)
   end
 end
-
-
+ 
+ 
+local checked = {}
 
 local function update_mob()
+  checked = {}
+  
   for i=#mobs,1,-1 do
       local k = mobs[i]
-      k.y = k.y + 0.75
+      k.y = k.y + k.sy
       local boo 
       --check player coll and end
       --cons.print(h.dist(p.p.x,p.p.y,k.x,k.y))
-      if h.dist(p.p.x,p.p.y,k.x,k.y) < 15 then
-         boo = h.CheckCollision(k,{p1={x=p.p.x-16,y = p.p.y-16 },p2={x=p.p.x+16,y = p.p.y-16 }})
+      
+      
+     -- if h.dist(p.p.x,p.p.y,k.x,k.y) < 15 then
+      if h.dist_m(p.p.x+8,p.p.y+8,k.x+32,k.y+32) < 50 then
+        --checking with top left point
+        -- boo = h.CheckCollision(k,{p1={x=p.p.x,y = p.p.y },p2={x=p.p.x+16,y = p.p.y+16 }})
+        -- table.insert(checked,{k,{p1={x=p.p.x,y = p.p.y },p2={x=p.p.x+16,y = p.p.y+16 }},boo,p})
+        
+        --checking with middle point
+         boo =  true--h.CheckCollision(k,{p1={x=p.p.x,y = p.p.y },p2={x=p.p.x+16,y = p.p.y+16 }})
+         table.insert(checked,{k,{p1={x=p.p.x+8,y = p.p.y+8 }},boo,p})
       end
      
      if boo == true then
@@ -151,9 +165,9 @@ local function draw_mob()
     love.graphics.setColor(255,255,255,255)
    for i,j in ipairs(mobs) do
        
-     --love.graphics.rectangle("fill",j.x,j.y,32,32)
+     --love.graphics.rectangle("fill",j.x,j.y,64,64)
      love.graphics.draw(img,mob_quad[1],j.x,j.y,0,1,1)
-    
+   -- love.graphics.circle("line",j.x+j.w/2,j.y+j.h/2,15)
    end
    
 end
@@ -481,12 +495,44 @@ function love.load()
  
  
  load_parts()
+ shader_txt = [[
+    vec4 effect(vec4 c,Image t,vec2 coord, vec2 screen)
+    {
+       // eucledian two methodes
+       //c.a = 0+distance(vec2(0.5f,0.5f),coord);
+       //c.a = 0+ sqrt( pow(0.5f-coord.x,2) + pow(0.5f-coord.y,2));
+       
+       // manhatten
+       //c.a = 0+abs(coord.x-0.5f)+abs(coord.y-0.5f);
+       
+       //colorrrrsss
+       //c.r =abs(coord.x-0.5f);
+       //c.g =abs(coord.y-0.5f);
+       //c.b =abs(coord.y);
+       
+       return c ;
+    }
+ ]]
+ 
+ shdr = love.graphics.newShader(shader_txt)
 end
 
 
 function love.draw()
+ -- gr.setShader(shdr)
   draw[state]()
   ui.draw()
+  
+  for i,o in ipairs(checked) do
+      --mob
+      gr.rectangle("line",o[1].x,o[1].y,64,64)
+      gr.rectangle("fill",o[1].x+32,o[1].y+32,3,3)
+      gr.circle("line",o[1].x+32,o[1].y+32,40)
+      
+      --player
+      gr.rectangle("line",o[2].p1.x,o[2].p1.y,16,16)
+  end
+ -- gr.setShader()
 end
 
 

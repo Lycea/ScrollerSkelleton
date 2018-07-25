@@ -5,7 +5,7 @@ function helper.lerp_(x,y,t) local num = x+t*(y-x)return num end
 -- Returns the distance between two points.
 function helper.dist(x1,y1, x2,y2) return ((x2-x1)^2+(y2-y1)^2)^0.5 end
 
-
+function helper.dist_m(x1,y1,x2,y2) return math.abs(x1-x2)+math.abs(y1-y2) end
 --return angle between points
 function helper.angle(x1,y1, x2,y2) return math.atan2(y2-y1, x2-x1) end
 
