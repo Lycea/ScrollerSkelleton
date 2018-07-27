@@ -1,6 +1,5 @@
 local ui 
 
-
 local canv_1 = 0
 local canv_1y = 0
 
@@ -15,13 +14,10 @@ local p={}
 p.p = {x=0,y=0}
 
 
-
 local draw   ={}
 
 local update ={}
 local last_state = "menue"
-
-
 
 
 
@@ -30,19 +26,19 @@ local function gen_bg1()
   love.graphics.setCanvas(canv)
   
   love.graphics.setPointSize(3)
-    for i= 0, 50 do
-      local x,y =rnd(0, canv_width-10),rnd(0,canv_height-10)
-      love.graphics.points(x,y)
-    end
-  love.graphics.setPointSize(1)
-    for i=0, 50 do
-      local x,y = rnd(20,canv_width-30),rnd(20,canv_height - 30)
-      local c = rnd(0,255)
-      local r = rnd(5,20)
-      love.graphics.setColor(c,c,c,255)
-      love.graphics.circle("fill",x,y,r)
-    end
+  for i= 0, 50 do
+    local x,y =rnd(0, canv_width-10),rnd(0,canv_height-10)
+    love.graphics.points(x,y)
+  end
     
+  love.graphics.setPointSize(1)
+  for i=0, 50 do
+    local x,y = rnd(20,canv_width-30),rnd(20,canv_height - 30)
+    local c = rnd(0,255)
+    local r = rnd(5,20)
+    love.graphics.setColor(c,c,c,255)
+    love.graphics.circle("fill",x,y,r)
+  end
     
     
   love.graphics.setCanvas()
@@ -77,6 +73,7 @@ local mob_quad={}
 
 local bull = {}
 local mobs = {}
+local items = {}
 
 local states= {"game","menue","options","pause"}
 local state = "game"
@@ -104,7 +101,7 @@ local function spawn_bull()
   
 end
 
-local function spawn_mob(x_,y_,sy,sx)
+local function spawn_mob(x_,y_,sy,sx,lp)
   mobs[#mobs+1] = {}
   
   mobs[#mobs].w = 64
@@ -114,18 +111,49 @@ local function spawn_mob(x_,y_,sy,sx)
   mobs[#mobs].y = y_
   mobs[#mobs].sy = sy or 0.75
   mobs[#mobs].sx = sx or 0
-  
+  mobs[#mobs].lp = lp or 1
 end
 
 local function spawn_mob_row()
   for i = 0, 7 do
-     cons.print(i*32+20)
-    spawn_mob(i* 75 ,0)
+    -- cons.print(i*32+20)
+    spawn_mob(i* 75 ,-64,2)
   end
 end
  
  
 local checked = {}
+
+
+
+local drops = {
+  base =
+  {
+    coin = {c=100,n=1,id=1,name="coin"},
+    r_c  = {c=10,n=1,id=2,name="red coin"},
+    b_c  = {c=5,n=1,id=3,name= "blue coin"},
+    pow  = {c=10,n=1,id=4,name = "power up"},
+    double = {c=5,n=1,id=5,name = "double attack"}
+  }
+}
+
+
+local drop_color ={
+  {255,255,0},
+  {255,0,0},
+  {0,255,255},
+  {255,0,255},
+  {255,150,50}
+}
+
+
+local function drop_item(o,id,n)
+ --find the place (random from the middle of mob)
+ local x,y = o.x+o.w/2+rnd(0,o.w/2 -3)  ,o.y+o.h/2+rnd(0,o.h/2 -3)
+ table.insert(items,{x=x,y=y,id=id,w=16,h=16,name = n})
+end
+
+
 
 local function update_mob()
   checked = {}
@@ -148,9 +176,27 @@ local function update_mob()
          boo =  true--h.CheckCollision(k,{p1={x=p.p.x,y = p.p.y },p2={x=p.p.x+16,y = p.p.y+16 }})
          table.insert(checked,{k,{p1={x=p.p.x+8,y = p.p.y+8 }},boo,p})
       end
+      
+      
      
      if boo == true then
        col_count = col_count +1
+     end
+     
+     if k.lp <1 then
+       table.remove(mobs,i)
+       --drop items
+       for id,item in pairs(drops.base) do
+          local n =rnd(0,100)
+          --print("-----")
+          --print(item)
+          --print(id)
+          --print(n)
+          --print(item.c)
+         if  n<item.c then
+           drop_item(k,item.id,item.name)
+         end
+       end
      end
      
      if k.y> 800 then
@@ -191,11 +237,12 @@ local function update_bull()
     for k = #mobs,1,-1 do
         local mob = mobs[k]
         
-        if h.dist(mob.x,mob.y,j.x,j.y) < 70 then
+        if h.dist(mob.x+mob.h ,mob.y+mob.w ,j.x ,j.y) < 70 then
           if h.CheckCollision(j,{p1={x =mob.x,y= mob.y+mob.h},p2={x=mob.x+mob.w,y=mob.y+mob.h}}) == true then
-            table.remove(mobs,k)
+            mobs[k].lp =-1
+            --table.remove(mobs,k)
             table.remove(bull,i)
-            stats.killed_mobs = stats.killed_mobs+1
+            --stats.killed_mobs = stats.killed_mobs+1
           end
         end
     end
@@ -256,6 +303,48 @@ local function bg_update2()
   end
 end
 
+function draw_items()
+   for id,item in pairs(items) do
+    love.graphics.setColor(drop_color[item.id])
+    love.graphics.rectangle("fill",item.x,item.y,item.w,item.h)
+  end
+  love.graphics.setColor(0xff,0xff,0xff,0xff)
+end
+
+
+collect =
+{
+  --valuables
+  coin= function ()  stats.coins = stats.coins +1 end,
+  ["red coin"]=function () cons.print("vip")end,
+  ["blue coin"]=function () cons.print("vip")end,
+  ["power up"]=function () cons.print("vip")end,
+  ["double attack"]=function () cons.print("vip")end,
+}
+
+
+function update_items()
+  --print(#items)
+  if #items == 0 then
+    return
+  end
+  
+  for i=#items,1,-1 do
+    --print(i)
+    items[i].y= items[i].y+3
+    if items[i].y > 600 then
+       --cons.print(items[i].y)
+      table.remove(items,i)
+    elseif h.dist_m(items[i].x+8,items[i].y+8,p.p.x+16,p.p.y+16) <35 then
+       
+        --stats.coins =stats.coins+ 1 
+        collect[items[i].name]()
+        cons.print("You collected a "..items[i].name)
+        table.remove(items,i)
+    end
+  end
+end
+
 -------------------------------------------
 --main drawing and update functions start--
 -------------------------------------------
@@ -271,7 +360,7 @@ function draw.game()
   draw_mob()
   
   draw_bull()
-  
+  draw_items()
   
   love.graphics.print(col_count,0,0)
   love.graphics.line(canv_width,0,canv_width,canv_height)
@@ -309,7 +398,7 @@ function update.game(dt)
   timer = timer +dt
   timer_mobs = timer_mobs +dt
   
-  if timer_mobs > 1.5 then
+  if timer_mobs > 2 then
     timer_mobs = 0
 
     spawn_mob_row()
@@ -328,6 +417,7 @@ function update.game(dt)
   update_mob()
   
   update_bull()
+  update_items()
   
   
   update_stats(dt) 
@@ -398,7 +488,7 @@ local function button_cb(id,name)
     for idx,obj in pairs(gui) do
         for idx2,id_ in ipairs(obj) do
            if id == id_ then
-               print(idx)
+               --print(idx)
                cb[idx](id)
            end
            
@@ -532,6 +622,8 @@ function love.draw()
       --player
       gr.rectangle("line",o[2].p1.x,o[2].p1.y,16,16)
   end
+  
+ 
  -- gr.setShader()
 end
 
